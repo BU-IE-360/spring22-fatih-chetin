@@ -2,6 +2,6 @@
 
 ## Homework 1:
 
-[link](https://moodle.boun.edu.tr)
+[Here is my report](https://bu-ie-360.github.io/spring22-fatih-chetin/IE360-HW1.html)
 
 
