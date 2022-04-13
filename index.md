@@ -1,6 +1,6 @@
 ## Welcome to My GitHub Page
 
-## Homework 2:
+## Homework 1:
 
 [Here is my report](https://bu-ie-360.github.io/spring22-fatih-chetin/Files/IE360-HW1.html)
 
