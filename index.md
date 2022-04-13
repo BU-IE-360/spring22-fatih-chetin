@@ -8,6 +8,6 @@
 
 [Here is my Rmd File](https://github.com/BU-IE-360/spring22-fatih-chetin/blob/gh-pages/Files/IE360%20HW1.Rmd)
 
-
+[Here is the data files I used in my analysis](https://github.com/BU-IE-360/spring22-fatih-chetin/blob/gh-pages/Data)
 
 
