@@ -4,9 +4,9 @@
 
 [Here is my report](https://bu-ie-360.github.io/spring22-fatih-chetin/Files/IE360-HW1.html)
 
-[Here is my R code](https://bu-ie-360.github.io/spring22-fatih-chetin/Files/IE360-HW1.R)
+[Here is my R code](https://bu-ie-360.github.io/spring22-fatih-chetin/Files/IE360 HW1.R)
 
-[Here is my Rmd File](https://bu-ie-360.github.io/spring22-fatih-chetin/Files/IE360-HW1.Rmd)
+[Here is my Rmd File](https://bu-ie-360.github.io/spring22-fatih-chetin/Files/IE360 HW1.Rmd)
 
 
 
