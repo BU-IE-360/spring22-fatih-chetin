@@ -187,9 +187,6 @@ In conclusion, it can be said that people tend to use their cards more (probably
 * [Google Trends](https://trends.google.com/trends/?geo=TR)
 * *[Shoe leather cost](https://en.wikipedia.org/wiki/Shoe_leather_cost)
 
-```{r message=FALSE,warning=FALSE}
 
-knitr::purl(input = "IE360 HW1.Rmd", output = "IE360 HW1.R",documentation = 0) #to extract the R code
-```
 
 
