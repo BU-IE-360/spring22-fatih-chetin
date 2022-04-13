@@ -1,0 +1,195 @@
+---
+title: "IE360 HW1"
+author: "Fatih ÇETİN"
+date: "12 Nisan 2022"
+
+output:
+  html_document:
+    code_folding: "hide"
+---
+
+<style type="text/css">
+
+body{ /* Normal  */
+      font-size: 12.5pt;
+      font-family:"Times New Roman"
+  }
+  
+</style>
+
+
+## Introduction
+
+  The correlation between exchange rates and inflation is a well-known economic phenomenon. However, their correlation with card usage is not that mentioned (At least in the basic economics classes). This study aims to answer the question: **"Are people inclined to prefer paying with cards more as the life gets more and more expensive?"** by analyzing the correlation between credit card usage, CPI, and exchange rates. 
+  
+  To be able to perform this analysis, "Genel Kartlı Ödeme Endeksi" (which means General Card Paymanet Index) data for card usage,"Tüketici Fiyat Endeksi (Genel)" (which means Consumer Price Index (General)) data for CPI, and "(USD) ABD Doları (Döviz Alış)" which means (USD/TRY exchange rate) data for USD/TRY exchange rate are obtained from "EVDS" database of "TCMB"(Central Bank of Turkish Republic).
+  
+  Also, some search data obtained from "Google Trends" is  used to understand the effect of the changes in the chosen data on public. To be able to understand the effect of the changes in USD/TRY exchange rate, CPI, and Card Payment Index, search keywords "dolar" (Turkish for dollar), "enflasyon" (means inflation in Turkish), and "temassız ödeme" (means contactless payment in Turkish) is chosen respectively. The reasoning behind the selection of the first two keywords is quite obvious and doesn't need any justification. However, the last keyword might not seem like a good choice at first. The reasoning behind this choice is the simple logic that the more people use their cards, the more the number of contactless payments will increase and so does the number of search for contactless payments. The analysis of the data will show whether it's a good choice or not.
+  
+  The relation between these 3 measures and their search numbers are analyzed by the help of plots, boxplots, histograms and correlation plots which are fundamental data visualization techniques.
+
+## Initialization
+
+In the initialization phase all the related data is read and after some date manipulation turned into time series objects with the help of xts library. This process can be seen in detail in the code chunk of this section.
+```{r message=FALSE,warning=FALSE}
+require(openxlsx)   #for reading data
+library(ggplot2)    # for plotting histograms
+library(xts)        # extended time series library
+library(corrplot)   # for correlation analysis
+
+setwd("C:\\Users\\Win10\\OneDrive - boun.edu.tr\\Belgeler")
+data_all<-read.xlsx("EVDS (4).xlsx") #reading the EVDS data
+
+search_dollar<-read.csv("DollarSearch.csv")       #reading the google search data for dollar
+search_inflation<-read.csv("InflationSearch.csv") #reading the google search data for inflation
+search_card<-read.csv("Card Payment Search.csv")  #reading the google search data for card payment
+
+search_dollar$Month<-as.yearmon(x = search_dollar$Month)        #manipulating date
+search_inflation$Month<-as.yearmon(x = search_inflation$Month) #manipulating date
+search_card$Month<-as.yearmon(x = search_card$Month)         #manipulating date
+
+data_all$Tarih<-as.yearmon(x = data_all$Tarih) #manipulating date
+
+#creating the time series object for evds data
+data_ts <- xts(x = data_all[-1],order.by = data_all$Tarih,frequency = 4) 
+
+#creating the time series object for dollar search data
+dollar_ts<-xts(x=search_dollar[-1],order.by=search_dollar$Month,frequency=4)
+
+#creating the time series object for inflation search data
+inflation_ts<-xts(x=search_inflation[-1],order.by=search_dollar$Month,frequency=4)
+
+#creating the time series object for card payment search data
+card_ts<-xts(x=search_card[-1],order.by=search_dollar$Month,frequency=4)
+
+colors=c("darkred","blueviolet","aquamarine4")
+
+
+```
+
+## Visualization and Analysis of the Data
+
+### Plots
+
+```{r message=FALSE,warning=FALSE}
+par(mfrow=c(2,1))
+plot(data_ts$USD,col=colors[1],main="USD/TRY Exchange Rate")
+lines(predict(lm(data_ts$USD~data_all$Tarih)))
+plot(dollar_ts,col=colors[1],main="Google Search Index for 'dolar'")
+```
+
+Although not the same, the patterns in the plots above are quite similar. Both has an exponential like increasing trend. Also, sudden increases in USD/TRY exchange rate causes local peaks in the number of searches for the keyword "dolar". This can be easily observed by looking at the values of September 2018 and December 2021. However, the almost constantly increasing  trend observed in the USD/TRY data is not present in the number of searches for "dolar" data. This is probably due to the fact that sudden increases make people get excited and make them search for "dolar" more at first making the search numbers peak, then they lose interest after a while and the number of searches decrease drastically until the next sudden increase in the exchange rate. When these sudden falls are ignored, it can be said that these two data are highly correlated. 
+
+```{r message=FALSE,warning=FALSE}
+par(mfrow=c(2,1))
+plot(data_ts$CPI,col=colors[2],main="CPI values of Turkey")
+plot(inflation_ts,col=colors[2],main="Google Search Index for 'enflasyon'")
+```
+
+Same comments made above can be made for these two data as well. However, the fluctuation difference between these two plots are much higher. This may be due to the fact that in the modern economies deflation is almost impossible and therefore prices almost always go higher and higher making CPI constantly increase while the search for inflation will have a natural seasonality stemming from the everchanging interest of people in the everchanging economic environment of Turkey.
+
+```{r message=FALSE,warning=FALSE}
+par(mfrow=c(2,1))
+plot(data_ts$Card.Payment.Index,col=colors[3],main="Card Payment Index of Turkey")
+plot(card_ts,col=colors[3],main="Google Search Index for 'temassız ödeme'")
+```
+
+Again, these two plots both have exponential like increasing trends which are mostly coinciding as well.Although the correlation is not as good as the ones between the first two data sets and their keywords, there still is an obvious correlation showing that the keyword "temassız ödeme" is a good choice for this analysis.  However, the increasing trend in the search volume for "temassız ödeme" keyword starts earlier and is more continous.This is probably because contactless payment is a relatively new technology and it's still in its spreading phase. Also around March 2020 there is a sharp decline in card payment index plot, while there is a sharp increase in searches for contactless payment. This might seem surprising at first, but if it's considered that this coincides with the  start of the pandemic in Turkey it will all be clear. At the early stages of the pandemic, lockdowns made people spend less decreasing the card usage and people got extra cautious and searched for ways like contactless payment to decrease social contact .  
+
+```{r message=FALSE,warning=FALSE}
+plot(zoo(data_ts),main="Card Payment Index, CPI & USD Exchange Rates vs. Time",col=colors[c(3,1,2)],lwd = c(2,2,2))
+```
+
+As it can be seen in the plots, these three measurements (especially CPI and USD/TRY ratio) are highly correlated with each other. They all have an exponential like increasing trend representing the dramatic increase in the cost of living in Turkey. Especially, the "USD/TRY" plot and the "CPI" plot have almost the same trend as expected. However, although not that close*, the "Card Payment Index" plot has an interestingly similar trend with some seasonality. This is an interesting finding and it shows that  people really tend to use their cards more as the life gets more and more expensive. However, a deeper analysis of the data is necessary to reach a conclusion. 
+
+
+
+*The reason why this plot isn't as correlated with the other two might be the fact that there are lots of other factors effecting the card usage of people, and the seasonal fluctuations in this data probably stem from the fact that the inclination towards spending changes from season to season.  
+
+### Graphs of the Distributions of the Data
+
+For a further analysis,the distributions of these 3 data sets are visualized and analyzed below. 
+
+```{r message=FALSE,warning=FALSE}
+
+dens3<-
+  ggplot(data_all,aes(x=USD))+
+  geom_density(color="darkgrey",fill=colors[1],adjust=1.5, alpha=.4) +
+  ggtitle("Distribution of USD/TRY")
+
+dens3
+```
+```{r message=FALSE,warning=FALSE}
+dens1<-
+  ggplot(data=data_all,aes(x=CPI))+
+  geom_density(color="darkgrey",fill=colors[2],adjust=1.5, alpha=.5) +
+  ggtitle("Distribution of CPI")
+dens1
+
+```
+
+```{r message=FALSE,warning=FALSE}
+
+dens2<-
+  ggplot(data_all,aes(x=Card.Payment.Index))+
+  geom_density(color="darkgrey",fill=colors[3],adjust=1.5, alpha=.6) +
+  ggtitle("Distribution of Card Payment Index")
+dens2
+```
+
+
+
+Looking at the distribution plots, it can be said that the probability distributions of these three measures are also quite similar which supports the findings obtained by the analysis of the scatter plots. All 3 data sets show a left-skewed normal like distribution (mean value is close to the minimum value). This skewedness of the data probably stems from the fact that all these values have been much lower for years until the rapid increases in the recent years. 
+
+### Box Plots
+
+```{r message=FALSE,warning=FALSE}
+boxplot(USD~as.yearqtr(Tarih),data=data_all,col=colors[1],xlab="Quarter",main="Boxplot of USD/TRY Exchange Rate")
+boxplot(CPI~as.yearqtr(Tarih),data=data_all,col=colors[2],xlab="Quarter",main="Boxplot of CPI values of Turkey")
+boxplot(Card.Payment.Index~as.yearqtr(Tarih),data=data_all,col=colors[3],xlab="Quarter",main="Boxplot of Card Payment Index values of Turkey")
+
+```
+
+Boxplots again show how these three data have similar patterns. As median CPI values and median exchange rates increase, median card usage index values also tend to incrase. An additional information that these boxplots provide is the scatteredness(can be seen by looking at the difference between the minimum and the maximum values) of the data. Altohugh the scatteredness of credit card usage index data is much higher, it can be seen that for these 3 data sets it generally increase or decrease synchronously (ignoring the seasonal fluctuations in the Card Payment Index Data) which is another sign of correlation supporting the previous findings.
+
+## Correlation Analysis
+
+Finally, a correlation check is necessary to reach a conclusion.
+
+```{r message=FALSE,warning=FALSE}
+
+corVals <- cor(data_all[,c(2,3,4)], use="pairwise.complete.obs") 
+
+corrplot.mixed(corVals, tl.col="black", tl.pos = "lt")
+
+```
+
+ Looking at the correlation plot, it can be seen that the USD/TRY exchange rate and CPI are drastically even almost perfectly correlated, but this is a more or less trivial finding. However, looking at the correlation between the card usage index and the other two data sets we see a correlation value of 0.79, which is still  a high correlation and is highly consistent with the previous findings.
+
+## Conclusion
+
+In this study, the correlation between the USD/TRY exchange rate, Consumer Price Index of Turkey and the card payment index of Turkey is analyzed to answer the question:**"Are people inclined to prefer paying with cards more as the life gets more and more expensive?"** . After analyzing the data obtained from EVDS using some data visualization techniques, the related findings are as follows:
+
+* Scatter plots show that all three data sets have an exponential like increasing trend mostly coinciding with each other.
+
+* Distribution plots show that all three data sets have a left skewed normal like distribution highly resembling each other.
+
+* Boxplots also show that they have a similar trend, but it also shows that their scatteredness changes synchronously as well.
+
+* Finally, correlation plots supported the previous findings by showing that the card payment index is positively correlated with USD/TRY exchange rate and CPI values. The coefficient of determinations between card payment index and the other datasets both were 0.79. Which is non-negligible.
+
+In conclusion, it can be said that people tend to use their cards more (probably carrying less cash which is consistent with "shoeleather cost"* concept in economics) as the life gets more expensive looking at the findings of this study. 
+
+
+## References
+
+* [EVDS](https://evds2.tcmb.gov.tr/index.php)
+* [Google Trends](https://trends.google.com/trends/?geo=TR)
+* *[Shoe leather cost](https://en.wikipedia.org/wiki/Shoe_leather_cost)
+
+```{r message=FALSE,warning=FALSE}
+
+knitr::purl(input = "IE360 HW1.Rmd", output = "IE360 HW1.R",documentation = 0) #to extract the R code
+```
+
+
