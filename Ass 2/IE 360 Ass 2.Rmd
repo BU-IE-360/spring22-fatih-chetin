@@ -1,0 +1,266 @@
+---
+title: "IE360 HW2"
+author: "Fatih ÇETİN"
+date: "5 Mayıs 2022"
+
+
+output:
+  html_document:
+    code_folding: "hide"
+---
+
+<style type="text/css">
+
+body{ /* Normal  */
+      font-size: 12.5pt;
+      font-family:"Times New Roman"
+  }
+  
+</style>
+## Introduction
+
+In this study, unleaded gasoline sales of a major distributor in 2007 are forecasted using the 
+internal characteristics of the data like trend,seasonality,autocorrelation etc. and the predictors listed below:
+
+* RNUV: An index indicating the rate of new unleaded gasoline using vehicles being added to the traffic in 
+a quarter,
+* PU: Average price (adjusted with an index) of a liter of unleaded gasoline in a quarter,
+* PG: Average price (adjusted with an index) of a liter of diesel gasoline in a quarter,
+* NUGV: Number of unleaded gasoline using vehicles in the traffic,
+* NDGV: Number of diesel gasoline using vehicles in the traffic (per 1000 people),
+* GNPA: Agriculture component of Gross National Product (adjusted with an index),
+* GNPC: Commerce component of Gross National Product (adjusted with an index),
+* GNP: Grand total for GNP (agriculture, commerce and other components total).
+
+
+## Initialization
+
+In the initialization phase the related data is read and after some date manipulation turned into time series objects with the help of xts library. This process can be seen in detail in the code chunk of this section.
+```{r message=FALSE, warning=FALSE}
+
+
+# knitr::opts_chunk$set(dev="pdf")
+library(lubridate)  #for date manipulation
+library(xts) # for time series operations
+library(corrplot) # for correlation analysis
+library(forecast) # for residual analysis
+
+
+data_all<-read.csv("IE360_Spring22_HW2_data.csv")
+
+
+data_all$Quarter<-gsub('_',' ',data_all$Quarter)
+
+data_all$Quarter<-as.yearqtr(data_all$Quarter)
+
+
+data_all$Unleaded.Gasoline.Sale..UGS.<-as.numeric(gsub(' ','',data_all$Unleaded.Gasoline.Sale..UGS.))
+data_all$X..LPG.Vehicles..NLPG.<-as.numeric(gsub(' ','',data_all$X..LPG.Vehicles..NLPG.))
+data_all$X..Unleaded.Gasoline.Vehicles..NUGV.<-as.numeric(gsub(' ','',data_all$X..Unleaded.Gasoline.Vehicles..NUGV.))
+data_all$GNP.Agriculture<-as.numeric(gsub(' ','',data_all$GNP.Agriculture))
+data_all$GNP.Commerce<-as.numeric(gsub(' ','',data_all$GNP.Commerce))
+data_all$GNP.Total<-as.numeric(gsub(' ','',data_all$GNP.Total))
+
+
+data_ts<-xts(x=data_all[-1],order.by=data_all$Quarter,frequency=4)
+
+data_ts$trend<-1:32
+
+storage.mode(data_ts)<-"double"
+
+```
+
+## Visualization and Analysis of the Data
+
+### Plot
+```{r message=FALSE, warning=FALSE}
+plot(data_ts$Unleaded.Gasoline.Sale..UGS.)
+```
+
+
+As it can be seen on the plot, the data of the Unleaded Gasoline Sales has an obvious declining trend, starting from approximately 115.000 in the first quarter of 2000 down to around 87.000-88.000 at the end of 2006.
+
+There is also a yearly seasonality in the data. It peaks up at the 3rd quarter of every year. 
+
+In terms of stationarity, the data is not stationary with respect to mean. It has a declining trend as stated above. However, it is pretty stationary with respect to variance. Therefore, no transformation is needed.
+
+Other than these, the data doesn't have any unusual behaviour that needs to be included in the model.The independent variables and the internal characteristics of the data will be enough to model its behaviour.
+
+Before building up the model, the correlation of the UGS data with the independent variables should be analyzed to determine which independent variables to use in the model.
+
+## Correlation Analysis
+
+```{r, fig.height = 8, fig.width = 12}
+corVals <- cor(data_ts, use="pairwise.complete.obs") 
+
+corrplot.mixed(corVals, tl.col="black", tl.pos = "lt")
+```
+
+
+To have a more refined modeling process, only the variables that have absolute correlation values greater than 0.5 will be considered in the model. Thus, looking at the correlation plot, the only variables that will be considered while building up the model are:
+
+* X..Unleaded.Gasoline.Vehicles..NUGV.
+* X..LPG.Vehicles..NLPG.
+* Price.of.Diesel.Gasoline..PG.
+* X..of.Diesel.Gasoline.Vehicles..NDGV.
+* Price.of.Unleaded.Gasoline..PU. 
+* GNP.Agriculture
+
+## Checking the Autocorrelation
+
+To have a more clear insight on the data before starting the modelling process, the autocorrelation values should also be checked.
+```{r}
+acf(as.numeric(data_ts$Unleaded.Gasoline.Sale..UGS.),na.action = na.pass)
+```
+
+In the autocorrelation plot above, the autocorrelation values for lag 1 and lag 4 are above the limits. Thus, they might make good predictors for the target value. However, the lag 4 autocorrelation represents the quarterly seasonality which means there is no use in adding it to a model which already contains seasonality. Thus, the only lagged variable to be used in the model as a predictor is lag 1 series. 
+
+## Building Up The Model
+
+### Adding Trend Component
+
+It will be wiser to start building up the model with trend as the most obvious predictor of the data.
+
+```{r message=FALSE, warning=FALSE}
+model1<-lm(Unleaded.Gasoline.Sale..UGS.~trend,data=data_ts)
+
+summary(model1)
+```
+Looking at the summary table, it can be seen that the trend actually is a very significant predictor as expected. Thus, it will remain in the model.
+
+### Adding Seasonality
+
+Then the quarterly seasonality which is the second most obvious predictor should be added to the model.
+```{r}
+data_ts$quart<-rep(seq(1:4),8)
+
+model2<-lm(Unleaded.Gasoline.Sale..UGS.~trend+as.factor(quart),data=data_ts)
+
+summary(model2)
+```
+
+Again,as it can be seen in the summary table above, the seasonality component is also significant. So it will remain in the model.
+
+### Adding the Independent Variables
+
+  To make the modelling process easier and more refined, the independent variables that are correlated with the target value with a correlation coefficient which has an absolute value less than 0.5 is eliminated above. Thus, only the remaining ones will be considered as predictors in this section, and among these remaining predictors only the ones that cause an increase in the adjusted R squared value of the model will be added to the model.
+
+```{r}
+model3<-lm(Unleaded.Gasoline.Sale..UGS.~trend+as.factor(quart)+X..Unleaded.Gasoline.Vehicles..NUGV.,data=data_ts)
+
+summary(model3)
+```
+
+The predictor X..Unleaded.Gasoline.Vehicles..NUGV. decreased the adjusted R squared value. Thus, it won't be added to the model.
+
+```{r}
+model4<-lm(Unleaded.Gasoline.Sale..UGS.~trend+as.factor(quart)+X..LPG.Vehicles..NLPG.,data=data_ts)
+
+summary(model4)
+```
+
+Then, X..LPG.Vehicles..NLPG. variable is added, and it increased the adjusted R squared value of the model. Thus, it will remain in the model.
+
+```{r}
+model5<-lm(Unleaded.Gasoline.Sale..UGS.~trend+as.factor(quart)+X..LPG.Vehicles..NLPG.+Price.of.Diesel.Gasoline..PG.,data=data_ts)
+
+summary(model5)
+```
+
+Then, the variable Price.of.Diesel.Gasoline..PG. is added, and it increased the adjusted R squared value of the model. Thus, it will remain in the model as well.
+
+```{r}
+model6<-lm(Unleaded.Gasoline.Sale..UGS.~trend+as.factor(quart)+X..LPG.Vehicles..NLPG.+Price.of.Diesel.Gasoline..PG.+X..of.Diesel.Gasoline.Vehicles..NDGV.,data=data_ts)
+
+summary(model6)
+```
+
+Then, X..of.Diesel.Gasoline.Vehicles..NDGV. variable is added, and it increased the adjusted R squared value of the model. Thus, it will remain in the model as well
+
+.
+```{r}
+model7<-lm(Unleaded.Gasoline.Sale..UGS.~trend+as.factor(quart)+X..LPG.Vehicles..NLPG.+Price.of.Diesel.Gasoline..PG.+X..of.Diesel.Gasoline.Vehicles..NDGV.+Price.of.Unleaded.Gasoline..PU.,data=data_ts)
+
+summary(model7)
+```
+
+Then, the variable Price.of.Unleaded.Gasoline..PU. is added to the model,  and it increased the adjusted R squared value of the model. Thus, it will remain in the model as well
+
+```{r}
+model8<-lm(Unleaded.Gasoline.Sale..UGS.~trend+as.factor(quart)+X..LPG.Vehicles..NLPG.+Price.of.Diesel.Gasoline..PG.+X..of.Diesel.Gasoline.Vehicles..NDGV.+Price.of.Unleaded.Gasoline..PU.+GNP.Agriculture,data=data_ts)
+
+
+summary(model8)
+```
+
+Finally, the variable GNP.Agriculture  is added, but it decreased the adjusted R squared value. Thus, it won't be added to the model. 
+
+### Adding the Lagged Variable
+
+```{r}
+data_all$residual_lag1<-c(0,model8$residuals,0,0,0)
+
+data_ts<-xts(x=data_all[-1],order.by=data_all$Quarter,frequency=4)
+
+data_ts$trend<-1:32
+
+data_ts$quart<-rep(seq(1:4),8)
+
+storage.mode(data_ts)<-"double"
+
+model9<-lm(Unleaded.Gasoline.Sale..UGS.~trend+as.factor(quart)+X..LPG.Vehicles..NLPG.+Price.of.Diesel.Gasoline..PG.+X..of.Diesel.Gasoline.Vehicles..NDGV.+Price.of.Unleaded.Gasoline..PU.+residual_lag1,data=data_ts)
+
+summary(model9)
+
+```
+Looking at the summary table, the lag 1 variable increased the adjusted R squared value as well. Thus, it will also be added to the model.
+
+
+## Evaluation of the Model
+
+### R squared analysis
+
+In the summary table above, it can be seen that the final model has an R squared value of 0.9687 which means the 96.87% of the deviation of the data from its mean can be explained using this model. This is clearly very high. Also, its adjusted R squared value is 0.9531 which is also pretty high. This means that thşs model predicts with a high accuracy without using unnecessarily high number of predictors.
+
+### Significance of the Predictors
+
+In the summary table above, all the predictors (except X..of.Diesel.Gasoline.Vehicles..NDGV.) are significant. The reason behind this predictor being insignificant might be that there exist a colinearity between it and the any other variables in the model. However, since it has an absolute correlation value above 0.5 and it increased the adjusted R squared value, it remains in the model.
+ 
+
+### Residual Analysis
+```{r}
+checkresiduals(model9)
+```
+
+Residuals seem to be distributed around 0 randomly, without an obvious trend in the variance. The autocorrelation values of the residuals also seem to be in check. Finally, the distribution of the residuals is pretty similar to normal distribution. 
+
+### Result
+
+Since the model doesn't violate any residual assumptions while almost all the predictors are significant and it has a high adjusted R squared value, this model is a valid and satisfactory model.
+
+## Prediction
+
+Predicted values of UGS using the final model and the real values between 2000 Q1 - 2007 Q4 are plotted together in the plot below. 
+
+### Plot
+```{r}
+final <- xts(x = data.frame(data_ts$Unleaded.Gasoline.Sale..UGS.[1:32],predict(model9, data_ts)), order.by = data_all$Quarter[1:32], frequency = 4)
+colnames(final) <- c("Real", "Predicted")
+plot(final,
+     legend.loc = "topleft",
+     main = "Unleaded Gasoline Sale vs. Time",
+     minor.ticks = "years",
+     grid.ticks.on = "years",
+     yaxis.right = FALSE, col = c("black","magenta"),
+     grid.ticks.lty = 3)
+```
+
+### Numerical values
+
+The numerical values of the predictions for all the quarters of 2007 is listed below:
+
+```{r}
+prediction<-predict(model9, data_ts)
+prediction[29:32]
+```
+
