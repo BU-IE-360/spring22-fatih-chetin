@@ -12,7 +12,7 @@
 
 ## Homework 2:
 
-[Here is my report](https://bu-ie-360.github.io/spring22-fatih-chetin/Files/IE%20360-Ass-2.html)
+[Here is my report](https://bu-ie-360.github.io/spring22-fatih-chetin/Files/IE-360-Ass-2.html)
 
 [Here is my R code](https://github.com/BU-IE-360/spring22-fatih-chetin/blob/gh-pages/Files/IE%20360%20Ass%202.R)
 
