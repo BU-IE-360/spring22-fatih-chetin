@@ -18,3 +18,9 @@
 
 [Here is my Rmd File](https://github.com/BU-IE-360/spring22-fatih-chetin/blob/gh-pages/Files/IE%20360%20Ass%202.Rmd)
 
+## Project:
+
+[Here is our report](https://bu-ie-360.github.io/spring22-fatih-chetin/Files/IE-360-Ass-2.html)
+
+[Here is our R code](https://github.com/BU-IE-360/spring22-fatih-chetin/blob/gh-pages/Files/IE%20360%20Ass%202.R)
+
