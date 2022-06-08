@@ -20,7 +20,7 @@
 
 ## Project:
 
-[Here is our report](https://bu-ie-360.github.io/spring22-fatih-chetin/Files/projectsonnn (1).htm)
+[Here is our report](https://bu-ie-360.github.io/spring22-fatih-chetin/Files/projectsonnn%20(1).html)
 
-[Here is our R code](https://github.com/BU-IE-360/spring22-fatih-chetin/blob/gh-pages/Files/IE%20360%20Ass%202.R](https://github.com/BU-IE-360/spring22-fatih-chetin/blob/gh-pages/Files/360%20proje%20kod.R)
+[Here is our R code](https://github.com/BU-IE-360/spring22-fatih-chetin/blob/gh-pages/Files/360%20proje%20kod.R)
 
